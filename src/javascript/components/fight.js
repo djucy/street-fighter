@@ -33,6 +33,7 @@ export async function fight(firstFighter, secondFighter) {
             if (isFightOver) return;
 
             const key = event.code;
+            // console.log(key);
 
             if (
                 key === controls.PlayerOneAttack &&
