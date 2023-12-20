@@ -6,22 +6,33 @@ function getRandomValue() {
 
 export function getBlockPower(fighter) {
     const dodgeChance = getRandomValue();
-    return fighter.defense * dodgeChance;
+    const power = fighter.defense * dodgeChance;
+
+    return power;
 }
 
-export function getHitPower(fighter, isCritical = false) {
-    const criticalHitChance = isCritical ? 2 : getRandomValue();
-    return fighter.attack * criticalHitChance;
+export function getHitPower(fighter) {
+    const criticalHitChance = getRandomValue();
+    const power = fighter.attack * criticalHitChance;
+    return power;
 }
 
-export function getDamage(attacker, defender, isCritical = false) {
-    const hitPower = getHitPower(attacker, isCritical);
+export function getDamage(attacker, defender) {
+    let damage;
+    const hitPower = getHitPower(attacker);
     const blockPower = getBlockPower(defender);
-    const damage = Math.max(hitPower - blockPower, 0);
+    if (hitPower < blockPower) {
+        damage = 0;
+    } else {
+        damage = hitPower - blockPower;
+    }
+
     return damage;
 }
 
 export async function fight(firstFighter, secondFighter) {
+    let firstFighterHealth = firstFighter.health;
+    let secondFighterHealth = secondFighter.health;
     return new Promise(resolve => {
         let isFightOver = false;
 
@@ -33,7 +44,6 @@ export async function fight(firstFighter, secondFighter) {
             if (isFightOver) return;
 
             const key = event.code;
-            // console.log(key);
 
             if (
                 key === controls.PlayerOneAttack &&
@@ -48,11 +58,11 @@ export async function fight(firstFighter, secondFighter) {
 
                 if (isCriticalStrikeAvailable) {
                     lastCriticalStrikeTime1 = currentTime;
-                    // const damage = getDamage(firstFighter, secondFighter, true);
-                    // secondFighter.health -= damage;
+                    const damage = getDamage(firstFighter, secondFighter);
+                    secondFighterHealth -= damage;
                 } else {
-                    // const damage = getDamage(firstFighter, secondFighter);
-                    // secondFighter.health -= damage;
+                    const damage = getDamage(firstFighter, secondFighter);
+                    secondFighterHealth -= damage;
                 }
             } else if (
                 key === controls.PlayerTwoAttack &&
@@ -68,20 +78,20 @@ export async function fight(firstFighter, secondFighter) {
 
                 if (isCriticalStrikeAvailable) {
                     lastCriticalStrikeTime2 = currentTime;
-                    // const damage = getDamage(secondFighter, firstFighter, true);
-                    // firstFighter.health -= damage;
+                    const damage = getDamage(secondFighter, firstFighter);
+                    firstFighterHealth -= damage;
                 } else {
-                    // const damage = getDamage(secondFighter, firstFighter);
-                    // firstFighter.health -= damage;
+                    const damage = getDamage(secondFighter, firstFighter);
+                    firstFighterHealth -= damage;
                 }
             }
 
             // Check if the fight is over
-            if (firstFighter.health <= 0 || secondFighter.health <= 0) {
+            if (firstFighterHealth <= 0 || secondFighterHealth <= 0) {
                 isFightOver = true;
 
                 // Resolve the promise with the winner
-                resolve(firstFighter.health > secondFighter.health ? firstFighter : secondFighter);
+                resolve(firstFighterHealth > secondFighterHealth ? firstFighter : secondFighter);
             }
         };
 
@@ -95,7 +105,7 @@ export async function fight(firstFighter, secondFighter) {
 
 // function updateHealthBar(fighter, position) {
 //     const healthBar = document.getElementById(`${position}-fighter-indicator`);
-//     const initialHealth = fighter.initialHealth;
+//     const { initialHealth } = fighter;
 //     const currentHealth = fighter.health;
 //     const healthPercentage = Math.max((currentHealth / initialHealth) * 100, 0);
 //     healthBar.style.width = `${healthPercentage}%`;
